@@ -7,14 +7,21 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 
-# Folder where videos will be saved temporarily
-DOWNLOAD_FOLDER = 'downloads'
+# Set the base directory and define paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOWNLOAD_FOLDER = os.path.join(BASE_DIR, 'downloads')
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
 # Custom user agent to mimic a real browser
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
-# Path to the cookies file (export your YouTube cookies and save as cookies.txt in your app directory)
-COOKIES_FILE = 'cookies.txt'
+# Absolute path to the cookies file (make sure cookies.txt is in your project root)
+COOKIES_FILE = os.path.join(BASE_DIR, 'cookies.txt')
+
+# Debug: Check if cookies file exists
+if os.path.exists(COOKIES_FILE):
+    print("Cookies file exists and is accessible.")
+else:
+    print("WARNING: Cookies file is missing!")
 
 # Function to get available formats
 def get_formats(url):
@@ -38,7 +45,7 @@ def get_formats(url):
 def download_video(url, format_code):
     ydl_opts = {
         'format': format_code,
-        'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),  # Save path
+        'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
         'user_agent': USER_AGENT,
         'cookies': COOKIES_FILE,
     }
@@ -133,11 +140,8 @@ def download():
 @app.route('/downloads/<filename>')
 def download_file(filename):
     video_path = os.path.join(DOWNLOAD_FOLDER, filename)
-    # Serve the file to the user
     response = send_from_directory(DOWNLOAD_FOLDER, filename)
-    # Delete the file after download
     response.call_on_close(lambda: delete_after_serving(video_path))
-    # Remove the lock file
     delete_lock_file(filename)
     return response
 
