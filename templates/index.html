@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f4;
+        }
+        input[type="text"], select, button {
+            padding: 10px;
+            margin: 10px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>YouTube Video Downloader</h1>
+    
+    <form action="/download" method="POST">
+        <label for="url">Video URL:</label><br>
+        <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required><br><br>
+
+        <label for="quality">Select Quality:</label><br>
+        <select name="quality" id="quality">
+            <option value="best">Best</option>
+            <option value="worst">Worst</option>
+            <option value="360p">360p</option>
+            <option value="480p">480p</option>
+            <option value="720p">720p</option>
+            <option value="1080p">1080p</option>
+        </select><br><br>
+
+        <button type="submit">Download Video</button>
+    </form>
+
+    <!-- Display error message if there's one -->
+    {% if error_message %}
+        <div class="error-message">{{ error_message }}</div>
+    {% endif %}
+</body>
+</html>
