@@ -15,12 +15,11 @@ os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
 
 # Function to get available formats
-def get_formats(url, cookies_file_path):
+def get_formats(url):
     ydl_opts = {
         'quiet': True,               # Prevent output in console
         'extract_flat': True,        # Only get info, don't download
         'user_agent': USER_AGENT,
-        'cookies': cookies_file_path,  # Use uploaded cookies
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -33,12 +32,11 @@ def get_formats(url, cookies_file_path):
         return None
 
 # Function to download video
-def download_video(url, format_code, cookies_file_path):
+def download_video(url, format_code):
     ydl_opts = {
         'format': format_code,
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),
         'user_agent': USER_AGENT,
-        'cookies': cookies_file_path,  # Use uploaded cookies
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         result = ydl.extract_info(url, download=True)
@@ -88,18 +86,9 @@ def download():
     quality = request.form.get('quality', 'best')
     error_message = None
 
-    # Get the uploaded cookies file
-    cookies_file = request.files.get('cookies')
-    cookies_file_path = os.path.join(BASE_DIR, 'cookies_uploaded.txt')
-    if cookies_file:
-        cookies_file.save(cookies_file_path)
-    else:
-        error_message = "Please upload a cookies.txt file."
-        return render_template('index.html', error_message=error_message)
-
     try:
         # Get available formats for the video
-        formats = get_formats(video_url, cookies_file_path)  # Pass the uploaded cookies file
+        formats = get_formats(video_url)
         if not formats:
             error_message = "Invalid URL or the video is unavailable."
             return render_template('index.html', error_message=error_message)
@@ -123,7 +112,7 @@ def download():
             selected_format = 'best'
 
         # Download the video using the selected format
-        result = download_video(video_url, selected_format, cookies_file_path)  # Pass the cookies file
+        result = download_video(video_url, selected_format)
         video_name = f"{result['title']}.{result['ext']}"
         video_path = os.path.join(DOWNLOAD_FOLDER, secure_filename(video_name))
 
@@ -136,10 +125,6 @@ def download():
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
         return render_template('index.html', error_message=error_message)
-    finally:
-        # Clean up the uploaded cookies file after use
-        if os.path.exists(cookies_file_path):
-            os.remove(cookies_file_path)
 
 @app.route('/downloads/<filename>')
 def download_file(filename):
@@ -148,3 +133,7 @@ def download_file(filename):
     response.call_on_close(lambda: delete_after_serving(video_path))
     delete_lock_file(filename)
     return response
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
