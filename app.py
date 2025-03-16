@@ -11,19 +11,28 @@ app = Flask(__name__)
 DOWNLOAD_FOLDER = 'downloads'
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
+# Define a custom user agent to mimic a real browser
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
+
+# Optional: If you want to use cookies, specify the path to your cookies file
+# COOKIES_FILE = '/path/to/cookies.txt'
+
 # Function to get available formats
 def get_formats(url):
     ydl_opts = {
-        'quiet': True,  # Prevent output in console
-        'extract_flat': True,  # Don't download video, just get format info
+        'quiet': True,               # Prevent output in console
+        'extract_flat': True,        # Don't download video, just get format info
+        'user_agent': USER_AGENT,
+        # 'cookies': COOKIES_FILE,    # Uncomment if you have a cookies file
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             result = ydl.extract_info(url, download=False)
-            if 'formats' not in result:  # Handle invalid URL
+            if 'formats' not in result:  # Handle invalid URL or bot protection issue
                 return None
             return result.get('formats', [])
-    except Exception:
+    except Exception as e:
+        print("Error in get_formats:", e)
         return None  # In case of network error or invalid URL
 
 # Function to download video
@@ -31,6 +40,8 @@ def download_video(url, format_code):
     ydl_opts = {
         'format': format_code,
         'outtmpl': os.path.join(DOWNLOAD_FOLDER, '%(title)s.%(ext)s'),  # Path to save video
+        'user_agent': USER_AGENT,
+        # 'cookies': COOKIES_FILE,    # Uncomment if you have a cookies file
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         result = ydl.extract_info(url, download=True)
@@ -84,23 +95,23 @@ def download():
         # Get available formats for the video
         formats = get_formats(video_url)
 
-        if not formats:  # If no formats are returned, it's likely an invalid URL
+        if not formats:  # If no formats are returned, it's likely an invalid URL or a bot protection issue
             error_message = "Invalid URL or the video is unavailable."
             return render_template('index.html', error_message=error_message)
 
         # Match formats based on requested quality
         selected_format = None
-        for format in formats:
+        for fmt in formats:
             if 'p' in quality:
                 # If the user specifies a resolution (e.g., "360p", "480p")
-                if f'{quality}' in format.get('format_note', ''):
-                    selected_format = format['format_id']
+                if f'{quality}' in fmt.get('format_note', ''):
+                    selected_format = fmt['format_id']
                     break
-            elif quality == 'best' and format.get('format_id') == 'best':
-                selected_format = format['format_id']
+            elif quality == 'best' and fmt.get('format_id') == 'best':
+                selected_format = fmt['format_id']
                 break
-            elif quality == 'worst' and format.get('format_id') == 'worst':
-                selected_format = format['format_id']
+            elif quality == 'worst' and fmt.get('format_id') == 'worst':
+                selected_format = fmt['format_id']
                 break
 
         # Default to 'best' if no matching format is found
@@ -117,10 +128,10 @@ def download():
         create_lock_file(video_name)
 
         # Generate a URL for the downloaded video
-        video_url = url_for('download_file', filename=video_name)
+        download_link = url_for('download_file', filename=video_name)
 
         # Return the download page with the download link
-        return render_template('download_complete.html', video_name=video_name, video_url=video_url)
+        return render_template('download_complete.html', video_name=video_name, video_url=download_link)
     except Exception as e:
         error_message = f"An error occurred: {str(e)}"
         return render_template('index.html', error_message=error_message)
@@ -140,6 +151,4 @@ def download_file(filename):
     return response
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Default to 5000 if PORT is not set
-    app.run(host='0.0.0.0', port=port)
-
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
