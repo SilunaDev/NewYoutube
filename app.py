@@ -17,9 +17,16 @@ USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 # Absolute path to the cookies file (make sure cookies.txt is in your project root)
 COOKIES_FILE = os.path.join(BASE_DIR, 'cookies.txt')
 
-# Debug: Check if cookies file exists
+# Debug: Check if cookies file exists and print a preview of its contents
 if os.path.exists(COOKIES_FILE):
     print("Cookies file exists and is accessible.")
+    try:
+        with open(COOKIES_FILE, 'r', encoding='utf-8') as f:
+            cookies_preview = f.read(200)
+            print("Cookies file content preview (first 200 characters):")
+            print(cookies_preview)
+    except Exception as e:
+        print("Error reading cookies file:", e)
 else:
     print("WARNING: Cookies file is missing!")
 
