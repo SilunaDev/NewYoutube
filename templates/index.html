@@ -11,7 +11,7 @@
             padding: 50px;
             background-color: #f4f4f4;
         }
-        input[type="text"], select, button, input[type="file"] {
+        input[type="text"], select, button {
             padding: 10px;
             margin: 10px;
             width: 80%;
@@ -27,7 +27,7 @@
 <body>
     <h1>YouTube Video Downloader</h1>
     
-    <form action="/download" method="POST" enctype="multipart/form-data">
+    <form action="/download" method="POST">
         <label for="url">Video URL:</label><br>
         <input type="text" id="url" name="url" placeholder="Enter YouTube URL" required><br><br>
 
@@ -40,9 +40,6 @@
             <option value="720p">720p</option>
             <option value="1080p">1080p</option>
         </select><br><br>
-
-        <label for="cookies">Upload Cookies (cookies.txt):</label><br>
-        <input type="file" name="cookies" id="cookies" required><br><br>
 
         <button type="submit">Download Video</button>
     </form>
